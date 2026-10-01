@@ -1,30 +1,25 @@
 # Fix disconnected Arabic letters in Konsole
 
-[الشرح بالعربية](README.md)
+[العربية](README.md)
 
-A tested workaround for partially disconnected Arabic letters in **Konsole**, while Arabic renders normally elsewhere on the desktop.
+Arabic looked fine everywhere on my desktop except Konsole, where some letters appeared disconnected. It happened both inside and outside Hermes, so the problem wasn't limited to that application.
 
-## The working fix
+I tried changing the Word mode settings first, but that made no difference. What worked for me was switching the profile font to DejaVu Sans Mono and opening a new Konsole window. It's not my favourite-looking font, but the letters join correctly now, so I kept it.
 
-Set the active Konsole profile's font to **DejaVu Sans Mono**, then open a **completely new Konsole window**. A separate test window displayed connected Arabic, and the user confirmed the result.
+I'm sharing the settings in case you run into the same problem.
 
-This is a workaround verified for the case below, not a universal fix for every Arabic rendering issue or terminal emulator. It does not change system-wide fonts.
+## My setup
 
-## Tested environment
-
-- Fedora Linux 44 with the KDE desktop.
-- Konsole: `26.08.1-1.fc44.x86_64`.
+- Fedora Linux 44 with KDE.
+- Konsole `26.08.1-1.fc44.x86_64`.
 - UTF-8 was already configured and Arabic fonts were installed.
-- The issue affected Konsole both inside and outside Hermes; it was not specific to Hermes.
 
-## Recommended: change the font in the GUI
+## Change the font
 
-1. Open Konsole.
-2. Choose **Settings → Edit Current Profile**.
-3. On the **Appearance** page, select **DejaVu Sans Mono** and a suitable size. The test used size 10.
-4. Save the profile.
-5. Open a completely new Konsole window. Do not rely on a new tab in the existing Konsole process for verification.
-6. Run:
+1. Open Konsole and go to Settings → Edit Current Profile.
+2. Under Appearance, select DejaVu Sans Mono. I used size 10; choose a size that suits you.
+3. Save the settings and open a completely new Konsole window, not just another tab.
+4. Try this text:
 
 ```sh
 printf 'اللغة العربية جميلة
@@ -32,61 +27,63 @@ printf 'اللغة العربية جميلة
 '
 ```
 
-If you use Hermes, start it in the new window after confirming that the letters join correctly.
+If you use Hermes, start it in the new window after checking that the letters join correctly.
 
-## Check that the font is installed
+## If the font isn't installed
+
+Check which font the system selects:
 
 ```sh
 fc-match 'DejaVu Sans Mono:lang=ar' -f '%{family}: %{file}\n'
 ```
 
-Check that the result actually names **DejaVu Sans Mono**. Fontconfig can return a substitute when the requested font is unavailable.
+The result should name DejaVu Sans Mono. If it shows another font, the system may be using a substitute.
 
-On Fedora, install it if needed:
+On Fedora, you can install it with:
 
 ```sh
 sudo dnf install dejavu-sans-mono-fonts
 ```
 
-## Manual profile edit
+## Edit the profile file instead
 
-Profile files are normally located at:
+Konsole profile files are normally stored here:
 
 ```text
 ~/.local/share/konsole/*.profile
 ```
 
-Identify the profile you actually use in the Konsole UI and back it up before editing. Add or update this entry in its existing `[Appearance]` section; do not create a duplicate section:
+Make sure you're editing the profile you actually use, and back it up first. Add or update this entry in its `[Appearance]` section:
 
 ```ini
 Font=DejaVu Sans Mono,10,-1,5,50,0,0,0,0,0
 ```
 
-Do not replace your complete profile with the example: that could remove your colors, transparency, or startup commands. [examples/arabic-font.profile](examples/arabic-font.profile) is an illustrative snippet, not an automatic installer.
+Don't replace the whole file or add a duplicate `[Appearance]` section. Keep your colors, transparency, and other settings. I've included a [small example](examples/arabic-font.profile) to show the relevant entries.
 
-## What about Word mode?
+## Word mode settings
 
-The following settings were enabled during diagnosis:
+These were enabled when the font change worked:
 
 ```ini
 WordMode=true
 WordModeAttr=true
 ```
 
-Changing these settings alone **did not fix the issue**, according to the user's test. They remained enabled in the successful font test, so this repository does not claim that disabling them produces the same result. Selecting **DejaVu Sans Mono** was the change that produced the successful independent-window result.
+Enabling them alone didn't solve the problem. I left them enabled after changing the font, so these are the settings I actually tested. I haven't checked whether disabling them gives the same result.
 
-KDE documents that Word mode renders words as a unit, while the whole-word attributes option defers color, bold, and italic changes until the end of the word. That can affect highlighting within words; do not enable it unnecessarily if the font change alone works for you.
+`WordModeAttr` uses the same color and formatting for a whole word, which can affect highlighting within words. If changing the font is enough on your machine, there's no reason to change every profile setting.
 
-## Undo and troubleshooting
+## Notes from my experience
 
-- Select the previous font in the profile settings, or restore your profile backup, then open a new window.
-- Switching the system language to Arabic is not required for this case: UTF-8 was already working.
-- Do not reverse the text or convert it into Arabic Presentation Forms for this workaround; the change is at the terminal-rendering level.
-- If the problem persists, verify the active profile and the font returned by `fc-match`. Include your Konsole version and a screenshot of a non-sensitive test string when reporting the issue.
-- Some Arabic letters naturally do not join the following letter, such as ا, د, and ر. This issue concerns missing connections where joining is expected.
+I didn't need to change the system language or the fonts used by other applications. The issue was how Konsole displayed the text, not the Arabic text itself.
 
-## Reference
+To undo the change, select your previous font in the profile settings or restore your backup, then open a new window. If the letters are still disconnected, check the active profile and the actual font before making more changes.
 
-[KDE Konsole — Complex Text Layout](https://docs.kde.org/trunk_kf6/en/konsole/konsole/complex-text-rendering.html)
+Some Arabic letters, such as ا, د, and ر, naturally don't join the following letter. This issue concerns missing joins where the letters should connect.
 
-No personal profile contents, credentials, or screenshots of user sessions are included.
+This worked on the setup listed above. I can't promise the same settings will fix every Arabic rendering problem in every terminal.
+
+## Useful reference
+
+[KDE's documentation on text layout](https://docs.kde.org/trunk_kf6/en/konsole/konsole/complex-text-rendering.html)
